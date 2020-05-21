@@ -21,14 +21,16 @@ class M200520112334Account extends Migration
         }
 
         $this->createTable('{{%account}}', [
-            'id' => $this->char(16)->notNull(),
+            'id' => $this->primaryKey()->unsigned()->notNull(),
+            'uuid' => $this->char(36)->unique()->notNull(),
             'username' => $this->string(255)->null(),
             'email' => $this->string(255)->null(),
             'phone' => $this->text()->null(),
+            'type' => $this->string(64)->notNull(),
             'password' => $this->text()->null(),
             'pasword_reset_token' => $this->char(64)->null(),
             'pasword_reset_token_expiration' => $this->integer()->unsigned()->null(),
-            'auth_token' => $this->char(64),
+            'auth_token' => $this->char(64)->notNull(),
             'is_blocked' => $this->boolean()->defaultValue(false)->unsigned(),
             'is_system' => $this->boolean()->defaultValue(false)->unsigned(),
             'confirmation_token' => $this->char(64)->null(),
@@ -39,33 +41,16 @@ class M200520112334Account extends Migration
             'updated_at' => $this->integer()->unsigned(),
         ], $tableOptions);
 
-        $this->createTable('{{account_access_token}}', [
-            'id' => $this->primaryKey()->unsigned()->notNull(),
-            'account_id' => $this->char(16)->notNull(),
-            'app' => $this->string(255)->notNull(),
-            'token' => $this->char(64)->notNull(),
-            'expired_at' => $this->integer()->unsigned()->notNull(),
-            'last_active_at' => $this->integer()->unsigned()->null(),
-            'created_at' => $this->integer()->unsigned()->notNull(),
-        ], $tableOptions);
-
         $this->createTable('{{%account_vendor_auth}}', [
             'id' => $this->primaryKey()->unsigned()->notNull(),
-            'account_id' => $this->char(16)->notNull(),
+            'account_id' => $this->integer()->unsigned()->notNull(),
             'vendor' => $this->string(32)->notNull(),
             'access_token' => $this->text()->notNull(),
             'data' => $this->text()->null(),
+            'expiration' => $this->integer()->unsigned()->null(),
             'created_at' => $this->integer()->unsigned(),
         ], $tableOptions);
 
-        $this->addPrimaryKey('account_id', '{{%account}}', 'id');
-
-        $this->addForeignKey(
-            'account_of_access_token',
-            '{{%account_access_token}}', 'account_id',
-            '{{%account}}', 'id',
-            'CASCADE'
-        );
 
         $this->addForeignKey(
             'account_of_vendor_auth',
@@ -81,10 +66,8 @@ class M200520112334Account extends Migration
     public function safeDown()
     {
         $this->dropForeignKey('account_of_vendor_auth', '{{%account_vendor_auth}}');
-        $this->dropForeignKey('account_of_access_token', '{{%account_access_token}}');
 
         $this->dropTable('{{%account}}');
-        $this->dropTable('{{%account_access_token}}');
         $this->dropTable('{{%account_vendor_auth}}');
     }
 }
